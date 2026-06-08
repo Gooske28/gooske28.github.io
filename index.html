@@ -412,6 +412,8 @@
   import { getDatabase, ref, push, onChildAdded,
            serverTimestamp, onValue, set, remove,
            onDisconnect, query, limitToLast }     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { initializeAppCheck, ReCaptchaV3Provider }
+           from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 
   // ── DOM refs ──
   const joinScreen   = document.getElementById('join-screen');
@@ -430,6 +432,10 @@
   if (!CONFIGURED) setupBanner.style.display = 'block';
 
   const app  = initializeApp(firebaseConfig);
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider("6LcQGRQtAAAAAP6OYeNU7HqX7YERTo66TzYveJRk"),
+    isTokenAutoRefreshEnabled: true
+  });
   const auth = getAuth(app);
   const db   = getDatabase(app);
 
