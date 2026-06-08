@@ -403,10 +403,14 @@
 
   const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
 
+  // ── Secret code to wipe all messages ──
+  // Type  /clear YOUR_CODE  in the chat to delete everything.
+  const DELETE_CODE = "Ymduq";
+
   import { initializeApp }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, signInAnonymously, signOut }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getDatabase, ref, push, onChildAdded,
-           serverTimestamp, onValue, set,
+           serverTimestamp, onValue, set, remove,
            onDisconnect, query, limitToLast }     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   // ── DOM refs ──
@@ -572,6 +576,34 @@
     if (!text || !currentUser) return;
     msgInput.value = '';
     autoResize();
+
+    // /clear <code> — delete all messages
+    const clearMatch = text.match(/^\/clear\s+(.+)$/);
+    if (clearMatch) {
+      if (clearMatch[1].trim() === DELETE_CODE) {
+        try {
+          await remove(ref(db, 'messages'));
+          messagesEl.innerHTML = '';
+          lastDate = null; lastUid = null;
+          await push(ref(db, 'messages'), {
+            text: 'Chat was cleared.',
+            uid: '__system__', username: '', ts: serverTimestamp()
+          });
+        } catch(e) { console.error(e); }
+      } else {
+        // Wrong code — show a local error briefly
+        const err = document.createElement('div');
+        err.className = 'date-divider';
+        err.style.color = '#f87171';
+        err.textContent = 'Wrong code.';
+        messagesEl.appendChild(err);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        setTimeout(() => err.remove(), 2000);
+      }
+      msgInput.focus();
+      return;
+    }
+
     sendBtn.disabled = true;
     try {
       await push(ref(db, 'messages'), {
