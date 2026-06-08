@@ -24,7 +24,6 @@
       --text: #f0f0f0;
       --muted: #888;
       --accent: #7c6af7;
-      --accent-dim: rgba(124,106,247,0.15);
       --green: #3ecf8e;
       --radius: 12px;
     }
@@ -39,8 +38,8 @@
       overflow: hidden;
     }
 
-    /* ── AUTH SCREEN ── */
-    #auth-screen {
+    /* ── JOIN SCREEN ── */
+    #join-screen {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -50,45 +49,46 @@
       padding: 2rem;
     }
 
-    #auth-screen h1 {
+    #join-screen h1 {
       font-size: clamp(1.6rem, 5vw, 2.4rem);
       font-weight: 300;
       letter-spacing: -0.03em;
-      color: var(--text);
       margin-bottom: 8px;
     }
 
-    #auth-screen h1 span { color: var(--accent); }
+    #join-screen h1 span { color: var(--accent); }
 
-    #auth-screen p {
+    #join-screen p {
       font-size: 14px;
       color: var(--muted);
       margin-bottom: 24px;
       text-align: center;
     }
 
-    .auth-form {
+    .join-form {
       display: flex;
       flex-direction: column;
       gap: 10px;
       width: 100%;
-      max-width: 320px;
+      max-width: 280px;
     }
 
-    .auth-form input {
+    .join-form input {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 8px;
       color: var(--text);
       font-family: inherit;
-      font-size: 14px;
+      font-size: 15px;
       padding: 11px 14px;
       outline: none;
       transition: border-color 0.15s;
+      text-align: center;
+      letter-spacing: 0.02em;
     }
 
-    .auth-form input:focus { border-color: var(--accent); }
-    .auth-form input::placeholder { color: var(--muted); }
+    .join-form input:focus { border-color: var(--accent); }
+    .join-form input::placeholder { color: var(--muted); }
 
     .btn-primary {
       background: var(--accent);
@@ -106,24 +106,11 @@
     .btn-primary:hover { opacity: 0.85; }
     .btn-primary:disabled { opacity: 0.4; cursor: default; }
 
-    #auth-error {
+    #join-error {
       color: #f87171;
       font-size: 13px;
       text-align: center;
       min-height: 18px;
-    }
-
-    .auth-switch {
-      font-size: 13px;
-      color: var(--muted);
-      text-align: center;
-      margin-top: 4px;
-    }
-
-    .auth-switch a {
-      color: var(--accent);
-      cursor: pointer;
-      text-decoration: none;
     }
 
     /* ── CHAT SCREEN ── */
@@ -225,7 +212,7 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    .msg.own { align-self: flex-end; align-items: flex-end; }
+    .msg.own   { align-self: flex-end;   align-items: flex-end; }
     .msg.other { align-self: flex-start; align-items: flex-start; }
 
     .msg-meta {
@@ -319,15 +306,6 @@
     #send-btn:active { transform: scale(0.93); }
     #send-btn:disabled { opacity: 0.3; cursor: default; }
 
-    /* ── SYSTEM MESSAGES ── */
-    .sys-msg {
-      align-self: center;
-      font-size: 12px;
-      color: var(--muted);
-      padding: 2px 0;
-      font-style: italic;
-    }
-
     /* ── SETUP BANNER ── */
     #setup-banner {
       background: rgba(124,106,247,0.12);
@@ -353,19 +331,15 @@
 </head>
 <body>
 
-<!-- ══════════════ AUTH SCREEN ══════════════ -->
-<div id="auth-screen">
+<!-- ══════════════ JOIN SCREEN ══════════════ -->
+<div id="join-screen">
   <h1><span>◈</span> Chat</h1>
-  <p>Sign in or create an account to start chatting.</p>
+  <p>Pick a username to join.</p>
 
-  <div class="auth-form" id="auth-form">
-    <input id="email-input" type="email" placeholder="Email" autocomplete="email" />
-    <input id="pass-input" type="password" placeholder="Password" autocomplete="current-password" />
-    <button class="btn-primary" id="auth-btn">Sign in</button>
-    <div id="auth-error"></div>
-    <div class="auth-switch">
-      No account? <a id="toggle-mode">Create one</a>
-    </div>
+  <div class="join-form">
+    <input id="username-input" type="text" placeholder="Username" maxlength="24" autocomplete="off" spellcheck="false" />
+    <button class="btn-primary" id="join-btn">Join chat</button>
+    <div id="join-error"></div>
   </div>
 </div>
 
@@ -378,13 +352,14 @@
     </div>
     <div class="header-right">
       <span id="username-display"></span>
-      <button class="btn-ghost" id="signout-btn">Sign out</button>
+      <button class="btn-ghost" id="leave-btn">Leave</button>
     </div>
   </header>
 
   <div id="setup-banner" style="display:none">
     ⚠️ <strong>Firebase not configured.</strong> Open <code>index.html</code>, find the
     <code>FIREBASE CONFIG</code> section and paste your project's config object.
+    Also enable <strong>Anonymous</strong> sign-in under Authentication → Sign-in method.
     <a href="https://firebase.google.com/docs/web/setup" target="_blank">Setup guide →</a>
   </div>
 
@@ -402,11 +377,10 @@
   //  ▼▼▼  FIREBASE CONFIG  ▼▼▼
   //
   //  1. Go to https://console.firebase.google.com/
-  //  2. Create a project (or open existing)
-  //  3. Add a Web app → copy the config object below
-  //  4. In Firebase console: enable Authentication → Email/Password
-  //  5. In Firebase console: create Realtime Database (start in test mode)
-  //     Then update rules to (paste in Rules tab):
+  //  2. Create a project → add a Web app → copy config below
+  //  3. Authentication → Sign-in method → enable "Anonymous"
+  //  4. Build → Realtime Database → Create database (test mode)
+  //     Then set these Rules:
   //
   //     {
   //       "rules": {
@@ -429,98 +403,102 @@
 
   const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
 
-  import { initializeApp }                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword,
-           signInWithEmailAndPassword, signOut,
-           onAuthStateChanged, updateProfile }          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { initializeApp }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signInAnonymously, signOut }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getDatabase, ref, push, onChildAdded,
-           serverTimestamp, onValue, set, onDisconnect,
-           query, limitToLast }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+           serverTimestamp, onValue, set,
+           onDisconnect, query, limitToLast }     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   // ── DOM refs ──
-  const authScreen  = document.getElementById('auth-screen');
-  const chatScreen  = document.getElementById('chat-screen');
-  const emailInput  = document.getElementById('email-input');
-  const passInput   = document.getElementById('pass-input');
-  const authBtn     = document.getElementById('auth-btn');
-  const authError   = document.getElementById('auth-error');
-  const toggleMode  = document.getElementById('toggle-mode');
-  const messagesEl  = document.getElementById('messages');
-  const msgInput    = document.getElementById('msg-input');
-  const sendBtn     = document.getElementById('send-btn');
-  const signoutBtn  = document.getElementById('signout-btn');
-  const uDisplay    = document.getElementById('username-display');
-  const onlineCount = document.getElementById('online-count');
-  const setupBanner = document.getElementById('setup-banner');
+  const joinScreen   = document.getElementById('join-screen');
+  const chatScreen   = document.getElementById('chat-screen');
+  const usernameInput= document.getElementById('username-input');
+  const joinBtn      = document.getElementById('join-btn');
+  const joinError    = document.getElementById('join-error');
+  const messagesEl   = document.getElementById('messages');
+  const msgInput     = document.getElementById('msg-input');
+  const sendBtn      = document.getElementById('send-btn');
+  const leaveBtn     = document.getElementById('leave-btn');
+  const uDisplay     = document.getElementById('username-display');
+  const onlineCount  = document.getElementById('online-count');
+  const setupBanner  = document.getElementById('setup-banner');
 
   if (!CONFIGURED) setupBanner.style.display = 'block';
 
-  // ── Firebase init ──
   const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db   = getDatabase(app);
 
-  // ── Auth mode toggle ──
-  let isSignup = false;
-  toggleMode.addEventListener('click', () => {
-    isSignup = !isSignup;
-    authBtn.textContent        = isSignup ? 'Create account' : 'Sign in';
-    toggleMode.textContent     = isSignup ? 'Sign in instead' : 'Create one';
-    toggleMode.previousSibling.textContent = isSignup ? 'Have an account? ' : 'No account? ';
-    authError.textContent = '';
-  });
-
-  // ── Auth submit ──
-  authBtn.addEventListener('click', async () => {
-    const email = emailInput.value.trim();
-    const pass  = passInput.value;
-    if (!email || !pass) return;
-    authBtn.disabled = true;
-    authError.textContent = '';
-    try {
-      if (isSignup) {
-        const cred = await createUserWithEmailAndPassword(auth, email, pass);
-        const name = email.split('@')[0];
-        await updateProfile(cred.user, { displayName: name });
-      } else {
-        await signInWithEmailAndPassword(auth, email, pass);
-      }
-    } catch (e) {
-      authError.textContent = friendlyError(e.code);
-      authBtn.disabled = false;
-    }
-  });
-
-  passInput.addEventListener('keydown', e => { if (e.key === 'Enter') authBtn.click(); });
-
-  signoutBtn.addEventListener('click', () => signOut(auth));
-
-  // ── Auth state ──
   let currentUser = null;
-  let presenceRef = null;
+  let currentUsername = '';
   let msgListenerAttached = false;
 
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      currentUser = user;
-      authScreen.style.display  = 'none';
-      chatScreen.style.display  = 'flex';
-      uDisplay.textContent = user.displayName || user.email.split('@')[0];
-      setupPresence(user.uid);
-      if (!msgListenerAttached) { listenMessages(); msgListenerAttached = true; }
-    } else {
-      currentUser = null;
-      authScreen.style.display  = 'flex';
-      chatScreen.style.display  = 'none';
-      authBtn.disabled = false;
+  // ── Join ──
+  joinBtn.addEventListener('click', joinChat);
+  usernameInput.addEventListener('keydown', e => { if (e.key === 'Enter') joinChat(); });
+
+  async function joinChat() {
+    const name = usernameInput.value.trim();
+    if (!name) { joinError.textContent = 'Please enter a username.'; return; }
+    if (name.length < 2) { joinError.textContent = 'Username must be at least 2 characters.'; return; }
+    if (!/^[a-zA-Z0-9_\-. ]+$/.test(name)) {
+      joinError.textContent = 'Letters, numbers, spaces, _ - . only.';
+      return;
     }
+    joinBtn.disabled = true;
+    joinError.textContent = '';
+    try {
+      const cred = await signInAnonymously(auth);
+      currentUser = cred.user;
+      currentUsername = name;
+      uDisplay.textContent = name;
+      joinScreen.style.display = 'none';
+      chatScreen.style.display = 'flex';
+      setupPresence(currentUser.uid, name);
+      if (!msgListenerAttached) { listenMessages(); msgListenerAttached = true; }
+      msgInput.focus();
+      // Announce join
+      await push(ref(db, 'messages'), {
+        text: `${name} joined the chat`,
+        uid: '__system__',
+        username: '',
+        ts: serverTimestamp()
+      });
+    } catch (e) {
+      joinError.textContent = 'Could not connect. Check Firebase config.';
+      console.error(e);
+      joinBtn.disabled = false;
+    }
+  }
+
+  // ── Leave ──
+  leaveBtn.addEventListener('click', async () => {
+    if (currentUser) {
+      await push(ref(db, 'messages'), {
+        text: `${currentUsername} left the chat`,
+        uid: '__system__',
+        username: '',
+        ts: serverTimestamp()
+      });
+      await set(ref(db, `presence/${currentUser.uid}`), null);
+      await signOut(auth);
+    }
+    currentUser = null;
+    currentUsername = '';
+    msgListenerAttached = false;
+    messagesEl.innerHTML = '';
+    lastDate = null; lastUid = null;
+    joinBtn.disabled = false;
+    usernameInput.value = '';
+    chatScreen.style.display = 'none';
+    joinScreen.style.display = 'flex';
   });
 
   // ── Presence ──
-  function setupPresence(uid) {
-    presenceRef = ref(db, `presence/${uid}`);
-    set(presenceRef, { online: true, uid });
-    onDisconnect(presenceRef).remove();
+  function setupPresence(uid, name) {
+    const pRef = ref(db, `presence/${uid}`);
+    set(pRef, { online: true, uid, name });
+    onDisconnect(pRef).remove();
     onValue(ref(db, 'presence'), snap => {
       const n = snap.exists() ? Object.keys(snap.val()).length : 0;
       onlineCount.textContent = `${n} online`;
@@ -537,9 +515,10 @@
   }
 
   function appendMessage(msg) {
-    const isOwn = currentUser && msg.uid === currentUser.uid;
-    const d     = new Date(msg.ts || Date.now());
-    const dateStr = d.toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' });
+    const isSystem = msg.uid === '__system__';
+    const isOwn    = !isSystem && currentUser && msg.uid === currentUser.uid;
+    const d        = new Date(msg.ts || Date.now());
+    const dateStr  = d.toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' });
 
     if (dateStr !== lastDate) {
       const div = document.createElement('div');
@@ -550,30 +529,40 @@
       lastUid  = null;
     }
 
-    const wrap   = document.createElement('div');
-    wrap.className = `msg ${isOwn ? 'own' : 'other'}`;
+    if (isSystem) {
+      const sys = document.createElement('div');
+      sys.className = 'date-divider';
+      sys.style.fontStyle = 'italic';
+      sys.textContent = msg.text;
+      messagesEl.appendChild(sys);
+      lastUid = null;
+    } else {
+      const wrap = document.createElement('div');
+      wrap.className = `msg ${isOwn ? 'own' : 'other'}`;
 
-    const showMeta = msg.uid !== lastUid;
-    if (showMeta) {
-      const meta = document.createElement('div');
-      meta.className = 'msg-meta';
-      const uname = document.createElement('span');
-      uname.className = 'uname';
-      uname.textContent = msg.username || 'anon';
-      const time = document.createElement('span');
-      time.textContent = d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-      if (!isOwn) meta.appendChild(uname);
-      meta.appendChild(time);
-      wrap.appendChild(meta);
+      if (msg.uid !== lastUid) {
+        const meta = document.createElement('div');
+        meta.className = 'msg-meta';
+        if (!isOwn) {
+          const uname = document.createElement('span');
+          uname.className = 'uname';
+          uname.textContent = msg.username || 'anon';
+          meta.appendChild(uname);
+        }
+        const time = document.createElement('span');
+        time.textContent = d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        meta.appendChild(time);
+        wrap.appendChild(meta);
+      }
+
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble';
+      bubble.textContent = msg.text;
+      wrap.appendChild(bubble);
+      messagesEl.appendChild(wrap);
+      lastUid = msg.uid;
     }
 
-    const bubble = document.createElement('div');
-    bubble.className = 'msg-bubble';
-    bubble.textContent = msg.text;
-    wrap.appendChild(bubble);
-
-    messagesEl.appendChild(wrap);
-    lastUid = msg.uid;
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
@@ -588,7 +577,7 @@
       await push(ref(db, 'messages'), {
         text,
         uid:      currentUser.uid,
-        username: currentUser.displayName || currentUser.email.split('@')[0],
+        username: currentUsername,
         ts:       serverTimestamp()
       });
     } catch(e) { console.error(e); }
@@ -601,26 +590,11 @@
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
 
-  // ── Auto-resize textarea ──
   function autoResize() {
     msgInput.style.height = 'auto';
     msgInput.style.height = Math.min(msgInput.scrollHeight, 120) + 'px';
   }
   msgInput.addEventListener('input', autoResize);
-
-  // ── Error messages ──
-  function friendlyError(code) {
-    const map = {
-      'auth/invalid-email':          'Invalid email address.',
-      'auth/user-not-found':         'No account with that email.',
-      'auth/wrong-password':         'Incorrect password.',
-      'auth/email-already-in-use':   'Email already in use.',
-      'auth/weak-password':          'Password must be at least 6 characters.',
-      'auth/too-many-requests':      'Too many attempts. Try again later.',
-      'auth/invalid-credential':     'Invalid email or password.',
-    };
-    return map[code] || 'Something went wrong. Try again.';
-  }
 </script>
 </body>
 </html>
