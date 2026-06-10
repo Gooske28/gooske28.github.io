@@ -645,6 +645,7 @@ const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
 
     sendBtn.disabled = true;
     try {
+      await pruneOldMessages();
       await push(ref(db, 'messages'), {
         text,
         uid:      currentUser.uid,
@@ -721,6 +722,15 @@ const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
       };
       reader.readAsDataURL(file);
     });
+  }
+
+  async function pruneOldMessages() {
+    const snap = await get(query(ref(db, 'messages'), orderByKey()));
+    if (!snap.exists()) return;
+    const keys = [];
+    snap.forEach(child => keys.push(child.key));
+    const toDelete = keys.slice(0, Math.max(0, keys.length - 99));
+    await Promise.all(toDelete.map(k => remove(ref(db, `messages/${k}`))));
   }
 
   async function pruneOldImages() {
