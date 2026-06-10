@@ -24,6 +24,7 @@
       --text: #f0f0f0;
       --muted: #888;
       --accent: #01bfa5;
+      --accent-dim: rgba(1,191,165,0.15);
       --green: #01e3c0;
       --radius: 12px;
     }
@@ -38,7 +39,7 @@
       overflow: hidden;
     }
 
-    /* ── JOIN SCREEN ── */
+    /* JOIN SCREEN */
     #join-screen {
       display: flex;
       flex-direction: column;
@@ -113,7 +114,7 @@
       min-height: 18px;
     }
 
-    /* ── CHAT SCREEN ── */
+    /* CHAT SCREEN */
     #chat-screen {
       display: none;
       flex-direction: column;
@@ -133,16 +134,11 @@
 
     .header-left { display: flex; align-items: center; gap: 10px; }
 
-    .logo {
-      font-weight: 500;
-      font-size: 15px;
-      letter-spacing: -0.01em;
-    }
+    .logo { font-weight: 500; font-size: 15px; letter-spacing: -0.01em; }
 
     .logo-dot {
       display: inline-block;
-      width: 8px;
-      height: 8px;
+      width: 8px; height: 8px;
       background: var(--green);
       border-radius: 50%;
       margin-right: 6px;
@@ -185,7 +181,7 @@
 
     .btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
 
-    /* ── MESSAGES ── */
+    /* MESSAGES */
     #messages {
       flex: 1;
       overflow-y: auto;
@@ -246,6 +242,8 @@
       border-bottom-left-radius: 4px;
     }
 
+
+
     .date-divider {
       align-self: center;
       font-size: 11px;
@@ -257,12 +255,12 @@
       margin: 12px 0;
     }
 
-    /* ── INPUT BAR ── */
+    /* INPUT BAR */
     #input-bar {
       border-top: 1px solid var(--border);
       padding: 12px 16px;
       display: flex;
-      gap: 10px;
+      gap: 8px;
       align-items: flex-end;
       background: var(--bg);
       flex-shrink: 0;
@@ -285,7 +283,7 @@
       transition: border-color 0.15s;
     }
 
-    #msg-input:focus { border-color: rgba(124,106,247,0.5); }
+    #msg-input:focus { border-color: rgba(1,191,165,0.5); }
     #msg-input::placeholder { color: var(--muted); }
 
     #send-btn {
@@ -306,12 +304,12 @@
     #send-btn:active { transform: scale(0.93); }
     #send-btn:disabled { opacity: 0.3; cursor: default; }
 
-    /* ── SETUP BANNER ── */
+    /* SETUP BANNER */
     #setup-banner {
-      background: rgba(124,106,247,0.12);
-      border: 1px solid rgba(124,106,247,0.3);
+      background: rgba(1,191,165,0.1);
+      border: 1px solid rgba(1,191,165,0.3);
       border-radius: 10px;
-      color: #c8c1ff;
+      color: #7de8dc;
       font-size: 13px;
       line-height: 1.6;
       margin: 0 20px 16px;
@@ -326,7 +324,35 @@
       padding: 1px 5px;
     }
 
-    #setup-banner a { color: #a89fff; }
+    #setup-banner a { color: var(--accent); }
+    #img-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      cursor: pointer;
+      flex-shrink: 0;
+      font-size: 17px;
+      height: 40px;
+      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    #img-btn:hover { border-color: var(--accent); color: var(--accent); }
+    #img-btn:disabled { opacity: 0.3; cursor: default; }
+
+    .msg-image {
+      max-width: 240px;
+      max-height: 200px;
+      border-radius: var(--radius);
+      display: block;
+      cursor: pointer;
+      object-fit: cover;
+    }
+    .msg.own  .msg-image { border-bottom-right-radius: 4px; }
+    .msg.other .msg-image { border-bottom-left-radius: 4px; }
 
     .faq-link {
       font-size: 12px;
@@ -339,11 +365,10 @@
 </head>
 <body>
 
-<!-- ══════════════ JOIN SCREEN ══════════════ -->
+<!-- JOIN SCREEN -->
 <div id="join-screen">
   <h1><span>◈</span> Chat</h1>
   <p>Pick a username to join.</p>
-
   <div class="join-form">
     <input id="username-input" type="text" placeholder="Username" maxlength="24" autocomplete="off" spellcheck="false" />
     <button class="btn-primary" id="join-btn">Join chat</button>
@@ -352,7 +377,7 @@
   </div>
 </div>
 
-<!-- ══════════════ CHAT SCREEN ══════════════ -->
+<!-- CHAT SCREEN -->
 <div id="chat-screen">
   <header>
     <div class="header-left">
@@ -367,21 +392,21 @@
   </header>
 
   <div id="setup-banner" style="display:none">
-    ⚠️ <strong>Firebase not configured.</strong> Open <code>index.html</code>, find the
-    <code>FIREBASE CONFIG</code> section and paste your project's config object.
-    Also enable <strong>Anonymous</strong> sign-in under Authentication → Sign-in method.
+    ⚠️ <strong>Firebase not configured.</strong> Paste your config, enable <strong>Anonymous</strong> auth,
+    create a <strong>Realtime Database</strong>, and enable <strong>Storage</strong>.
     <a href="https://firebase.google.com/docs/web/setup" target="_blank">Setup guide →</a>
   </div>
 
   <div id="messages"></div>
 
   <div id="input-bar">
+    <button id="img-btn" title="Send image">🖼</button>
+    <input id="img-input" type="file" accept="image/*" style="display:none" />
     <textarea id="msg-input" rows="1" placeholder="Message…"></textarea>
     <button id="send-btn" title="Send">↑</button>
   </div>
 </div>
 
-<!-- ══════════════ FIREBASE SDK ══════════════ -->
 <script type="module">
   // ─────────────────────────────────────────────────────────────────
   //  ▼▼▼  FIREBASE CONFIG  ▼▼▼
@@ -390,12 +415,11 @@
   //  2. Create a project → add a Web app → copy config below
   //  3. Authentication → Sign-in method → enable "Anonymous"
   //  4. Build → Realtime Database → Create database (test mode)
-  //     Then set these Rules:
-  //
+  //     Rules:
   //     {
   //       "rules": {
   //         "messages": { ".read": "auth != null", ".write": "auth != null" },
-  //         "presence": { ".read": "auth != null", ".write": "auth != null" }
+  //         "presence":  { ".read": "auth != null", ".write": "auth != null" }
   //       }
   //     }
   //
@@ -411,43 +435,45 @@
 };
   // ─────────────────────────────────────────────────────────────────
 
-  const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
-
   // ── Secret code to wipe all messages ──
   // Type  /clear YOUR_CODE  in the chat to delete everything.
   const DELETE_CODE = "Ymduq";
 
-  import { initializeApp }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, signInAnonymously, signOut }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
+
+  import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signInAnonymously, signOut }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getDatabase, ref, push, onChildAdded,
            serverTimestamp, onValue, set, remove,
-           onDisconnect, query, limitToLast }     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-  import { initializeAppCheck, ReCaptchaV3Provider }
-           from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
+           onDisconnect, query, limitToLast,
+           get, orderByKey }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  // ── DOM refs ──
-  const joinScreen   = document.getElementById('join-screen');
-  const chatScreen   = document.getElementById('chat-screen');
-  const usernameInput= document.getElementById('username-input');
-  const joinBtn      = document.getElementById('join-btn');
-  const joinError    = document.getElementById('join-error');
-  const messagesEl   = document.getElementById('messages');
-  const msgInput     = document.getElementById('msg-input');
-  const sendBtn      = document.getElementById('send-btn');
-  const leaveBtn     = document.getElementById('leave-btn');
-  const uDisplay     = document.getElementById('username-display');
-  const onlineCount  = document.getElementById('online-count');
-  const setupBanner  = document.getElementById('setup-banner');
+
+  // DOM refs
+  const joinScreen    = document.getElementById('join-screen');
+  const chatScreen    = document.getElementById('chat-screen');
+  const usernameInput = document.getElementById('username-input');
+  const joinBtn       = document.getElementById('join-btn');
+  const joinError     = document.getElementById('join-error');
+  const messagesEl    = document.getElementById('messages');
+  const msgInput      = document.getElementById('msg-input');
+  const sendBtn       = document.getElementById('send-btn');
+  const leaveBtn      = document.getElementById('leave-btn');
+  const uDisplay      = document.getElementById('username-display');
+  const onlineCount   = document.getElementById('online-count');
+  const imgBtn        = document.getElementById('img-btn');
+  const imgInput      = document.getElementById('img-input');
+  const setupBanner   = document.getElementById('setup-banner');
+
 
   if (!CONFIGURED) setupBanner.style.display = 'block';
 
-  const app  = initializeApp(firebaseConfig);
-  initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider("6LcQGRQtAAAAAP6OYeNU7HqX7YERTo66TzYveJRk"),
-    isTokenAutoRefreshEnabled: true
-  });
-  const auth = getAuth(app);
-  const db   = getDatabase(app);
+  const app     = initializeApp(firebaseConfig);
+  const auth    = getAuth(app);
+  const db      = getDatabase(app);
 
   let currentUser = null;
   let currentUsername = '';
@@ -477,12 +503,9 @@
       setupPresence(currentUser.uid, name);
       if (!msgListenerAttached) { listenMessages(); msgListenerAttached = true; }
       msgInput.focus();
-      // Announce join
       await push(ref(db, 'messages'), {
         text: `${name} joined the chat`,
-        uid: '__system__',
-        username: '',
-        ts: serverTimestamp()
+        uid: '__system__', username: '', ts: serverTimestamp()
       });
     } catch (e) {
       joinError.textContent = 'Could not connect. Check Firebase config.';
@@ -496,9 +519,7 @@
     if (currentUser) {
       await push(ref(db, 'messages'), {
         text: `${currentUsername} left the chat`,
-        uid: '__system__',
-        username: '',
-        ts: serverTimestamp()
+        uid: '__system__', username: '', ts: serverTimestamp()
       });
       await set(ref(db, `presence/${currentUser.uid}`), null);
       await signOut(auth);
@@ -575,10 +596,20 @@
         wrap.appendChild(meta);
       }
 
-      const bubble = document.createElement('div');
-      bubble.className = 'msg-bubble';
-      bubble.textContent = msg.text;
-      wrap.appendChild(bubble);
+      if (msg.image) {
+        const im = document.createElement('img');
+        im.src = msg.image;
+        im.className = 'msg-image';
+        im.alt = 'image';
+        im.onclick = () => window.open(msg.image, '_blank');
+        wrap.appendChild(im);
+      } else {
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble';
+        bubble.textContent = msg.text;
+        wrap.appendChild(bubble);
+      }
+
       messagesEl.appendChild(wrap);
       lastUid = msg.uid;
     }
@@ -593,7 +624,6 @@
     msgInput.value = '';
     autoResize();
 
-    // /clear <code> — delete all messages
     const clearMatch = text.match(/^\/clear\s+(.+)$/);
     if (clearMatch) {
       if (clearMatch[1].trim() === DELETE_CODE) {
@@ -607,14 +637,7 @@
           });
         } catch(e) { console.error(e); }
       } else {
-        // Wrong code — show a local error briefly
-        const err = document.createElement('div');
-        err.className = 'date-divider';
-        err.style.color = '#f87171';
-        err.textContent = 'Wrong code.';
-        messagesEl.appendChild(err);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-        setTimeout(() => err.remove(), 2000);
+        showLocalError('Wrong code.');
       }
       msgInput.focus();
       return;
@@ -631,6 +654,84 @@
     } catch(e) { console.error(e); }
     sendBtn.disabled = false;
     msgInput.focus();
+  }
+
+  function showLocalError(msg) {
+    const err = document.createElement('div');
+    err.className = 'date-divider';
+    err.style.color = '#f87171';
+    err.textContent = msg;
+    messagesEl.appendChild(err);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    setTimeout(() => err.remove(), 3000);
+  }
+
+  // ── Image upload ──
+  const MAX_IMG_BYTES = 500 * 1024; // 500 KB after compression
+  const MAX_STORED_IMGS = 5;
+
+  imgBtn.addEventListener('click', () => imgInput.click());
+
+  imgInput.addEventListener('change', async () => {
+    const file = imgInput.files[0];
+    imgInput.value = '';
+    if (!file || !currentUser) return;
+    if (!file.type.startsWith('image/')) { showLocalError('Only images are supported.'); return; }
+
+    imgBtn.disabled = true;
+    try {
+      const base64 = await compressImage(file);
+      // Rough size check: base64 string length * 0.75 ≈ bytes
+      if (base64.length * 0.75 > MAX_IMG_BYTES) {
+        showLocalError('Image too large even after compression (max ~500 KB).');
+        imgBtn.disabled = false;
+        return;
+      }
+      await pruneOldImages();
+      await push(ref(db, 'messages'), {
+        uid:      currentUser.uid,
+        username: currentUsername,
+        ts:       serverTimestamp(),
+        image:    base64
+      });
+    } catch(e) { console.error(e); showLocalError('Failed to send image.'); }
+    imgBtn.disabled = false;
+  });
+
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = e => {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = () => {
+          const MAX_DIM = 800;
+          let { width, height } = img;
+          if (width > MAX_DIM || height > MAX_DIM) {
+            if (width > height) { height = Math.round(height * MAX_DIM / width); width = MAX_DIM; }
+            else                { width = Math.round(width * MAX_DIM / height);  height = MAX_DIM; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function pruneOldImages() {
+    // Fetch all messages and collect keys of image messages, oldest first
+    const snap = await get(query(ref(db, 'messages'), orderByKey()));
+    if (!snap.exists()) return;
+    const imgKeys = [];
+    snap.forEach(child => { if (child.val().image) imgKeys.push(child.key); });
+    // Delete all but the last (MAX_STORED_IMGS - 1) so there's room for the new one
+    const toDelete = imgKeys.slice(0, Math.max(0, imgKeys.length - (MAX_STORED_IMGS - 1)));
+    await Promise.all(toDelete.map(k => remove(ref(db, `messages/${k}`))));
   }
 
   sendBtn.addEventListener('click', sendMessage);
