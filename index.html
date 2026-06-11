@@ -150,14 +150,79 @@
       50% { opacity: 0.3; }
     }
 
-    #online-count {
+    /* STATUS BAR */
+    #status-bar {
       font-size: 12px;
       color: var(--muted);
       background: var(--surface2);
-      padding: 3px 9px;
+      padding: 3px 10px;
       border-radius: 20px;
       border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
     }
+
+    .status-dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-dot.open   { background: var(--muted); }
+    .status-dot.active { background: var(--green); }
+
+    #typing-bar {
+      height: 24px;
+      padding: 0 20px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #typing-name {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+    }
+
+    .typing-dots span {
+      width: 4px;
+      height: 4px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: typingBounce 1.2s ease-in-out infinite;
+    }
+
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30%            { transform: translateY(-4px); opacity: 1; }
+    }
+
+    .btn-faq {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 7px;
+      color: var(--accent);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 11px;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .btn-faq:hover { background: var(--accent); color: #fff; }
 
     .header-right { display: flex; align-items: center; gap: 8px; }
 
@@ -373,7 +438,7 @@
     <input id="username-input" type="text" placeholder="Username" maxlength="24" autocomplete="off" spellcheck="false" />
     <button class="btn-primary" id="join-btn">Join chat</button>
     <div id="join-error"></div>
-    <a href="/faq?utm_source=gooske" class="faq-link">FAQ</a>
+    <a href="/faq" class="faq-link">FAQ</a>
   </div>
 </div>
 
@@ -382,14 +447,22 @@
   <header>
     <div class="header-left">
       <div class="logo"><span class="logo-dot"></span>Chat</div>
-      <span id="online-count">0 online</span>
+      <span id="status-bar">
+        <span class="status-dot active"></span><span id="active-count">0</span> active
+        &nbsp;·&nbsp;
+        <span class="status-dot open"></span><span id="open-count">0</span> open
+      </span>
     </div>
     <div class="header-right">
       <span id="username-display"></span>
-      <a href="/faq?utm_source=gooske" class="faq-link">FAQ</a>
+      <a href="/faq" class="btn-faq">FAQ</a>
       <button class="btn-ghost" id="leave-btn">Leave</button>
     </div>
   </header>
+  <div id="typing-bar" style="display:none">
+    <span id="typing-name"></span>
+    <div class="typing-dots"><span></span><span></span><span></span></div>
+  </div>
 
   <div id="setup-banner" style="display:none">
     ⚠️ <strong>Firebase not configured.</strong> Paste your config, enable <strong>Anonymous</strong> auth,
@@ -419,12 +492,13 @@
   //     {
   //       "rules": {
   //         "messages": { ".read": "auth != null", ".write": "auth != null" },
-  //         "presence":  { ".read": "auth != null", ".write": "auth != null" }
+  //         "presence":  { ".read": "auth != null", ".write": "auth != null" },
+  //         "typing":    { ".read": "auth != null", ".write": "auth != null" }
   //       }
   //     }
   //
   // ─────────────────────────────────────────────────────────────────
-  const firebaseConfig = {
+    const firebaseConfig = {
   apiKey: "AIzaSyCH3c4qGv7eAhNlfkc45iNY52tHzkJYNuQ",
   authDomain: "gooske-7a596.firebaseapp.com",
   databaseURL: "https://gooske-7a596-default-rtdb.europe-west1.firebasedatabase.app",
@@ -463,7 +537,10 @@ const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
   const sendBtn       = document.getElementById('send-btn');
   const leaveBtn      = document.getElementById('leave-btn');
   const uDisplay      = document.getElementById('username-display');
-  const onlineCount   = document.getElementById('online-count');
+  const activeCount   = document.getElementById('active-count');
+  const openCount     = document.getElementById('open-count');
+  const typingBar     = document.getElementById('typing-bar');
+  const typingName    = document.getElementById('typing-name');
   const imgBtn        = document.getElementById('img-btn');
   const imgInput      = document.getElementById('img-input');
   const setupBanner   = document.getElementById('setup-banner');
@@ -501,7 +578,7 @@ const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
       joinScreen.style.display = 'none';
       chatScreen.style.display = 'flex';
       setupPresence(currentUser.uid, name);
-      if (!msgListenerAttached) { listenMessages(); msgListenerAttached = true; }
+      if (!msgListenerAttached) { listenMessages(); listenTyping(); msgListenerAttached = true; }
       msgInput.focus();
       await push(ref(db, 'messages'), {
         text: `${name} joined the chat`,
@@ -517,6 +594,7 @@ const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
   // ── Leave ──
   leaveBtn.addEventListener('click', async () => {
     if (currentUser) {
+      setTyping(false);
       await push(ref(db, 'messages'), {
         text: `${currentUsername} left the chat`,
         uid: '__system__', username: '', ts: serverTimestamp()
@@ -535,14 +613,52 @@ const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
     joinScreen.style.display = 'flex';
   });
 
-  // ── Presence ──
+  // ── Presence (open vs active) ──
   function setupPresence(uid, name) {
     const pRef = ref(db, `presence/${uid}`);
-    set(pRef, { online: true, uid, name });
+    const isActive = !document.hidden && document.hasFocus();
+    set(pRef, { uid, name, active: isActive });
     onDisconnect(pRef).remove();
+
+    const updatePresence = () => {
+      const active = !document.hidden && document.hasFocus();
+      set(pRef, { uid, name, active });
+    };
+    document.addEventListener('visibilitychange', updatePresence);
+    window.addEventListener('focus', updatePresence);
+    window.addEventListener('blur',  updatePresence);
+
     onValue(ref(db, 'presence'), snap => {
-      const n = snap.exists() ? Object.keys(snap.val()).length : 0;
-      onlineCount.textContent = `${n} online`;
+      if (!snap.exists()) { activeCount.textContent = '0'; openCount.textContent = '0'; return; }
+      const vals = Object.values(snap.val());
+      activeCount.textContent = vals.filter(v => v.active).length;
+      openCount.textContent   = vals.length;
+    });
+  }
+
+  // ── Typing indicator ──
+  let typingTimeout = null;
+  let isTyping = false;
+
+  function setTyping(val) {
+    if (!currentUser) return;
+    isTyping = val;
+    set(ref(db, `typing/${currentUser.uid}`), val ? { name: currentUsername } : null);
+  }
+
+  function listenTyping() {
+    onValue(ref(db, 'typing'), snap => {
+      if (!snap.exists()) { typingBar.style.display = 'none'; return; }
+      const names = Object.entries(snap.val())
+        .filter(([uid]) => uid !== currentUser?.uid)
+        .map(([, v]) => v.name);
+      if (names.length === 0) {
+        typingBar.style.display = 'none';
+      } else {
+        const label = names.length === 1 ? names[0] : `${names.slice(0,-1).join(', ')} & ${names.at(-1)}`;
+        typingName.textContent = label;
+        typingBar.style.display = 'flex';
+      }
     });
   }
 
@@ -623,6 +739,8 @@ const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
     if (!text || !currentUser) return;
     msgInput.value = '';
     autoResize();
+    clearTimeout(typingTimeout);
+    setTyping(false);
 
     const clearMatch = text.match(/^\/clear\s+(.+)$/);
     if (clearMatch) {
@@ -724,6 +842,11 @@ const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
     });
   }
 
+  function autoResize() {
+    msgInput.style.height = 'auto';
+    msgInput.style.height = Math.min(msgInput.scrollHeight, 120) + 'px';
+  }
+
   async function pruneOldMessages() {
     const snap = await get(query(ref(db, 'messages'), orderByKey()));
     if (!snap.exists()) return;
@@ -748,12 +871,12 @@ const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
   msgInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
-
-  function autoResize() {
-    msgInput.style.height = 'auto';
-    msgInput.style.height = Math.min(msgInput.scrollHeight, 120) + 'px';
-  }
-  msgInput.addEventListener('input', autoResize);
+  msgInput.addEventListener('input', () => {
+    autoResize();
+    if (!isTyping) setTyping(true);
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => setTyping(false), 2000);
+  });
 </script>
 </body>
 </html>
